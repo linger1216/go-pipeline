@@ -1,5 +1,7 @@
 package pipe
 
+import "github.com/linger1216/go-pipeline/common"
+
 type FilterAnonymous struct {
 	name string
 	fn   Process
@@ -14,7 +16,7 @@ func (f *FilterAnonymous) Process(req Request) (Response, error) {
 }
 
 func NewFilterAnonymous(name string, fn Process) *FilterAnonymous {
-	_assert(fn != nil, `process func is nil`)
+	common.Assert(fn != nil, `process func is nil`)
 	return &FilterAnonymous{
 		name: name,
 		fn:   fn,

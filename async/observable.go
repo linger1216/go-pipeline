@@ -1,6 +1,9 @@
 package async
 
-import "time"
+import (
+	"github.com/linger1216/go-pipeline/common"
+	"time"
+)
 
 type Observable struct {
 	name string
@@ -135,7 +138,7 @@ func Just(items ...interface{}) *Observable {
 	return ret
 }
 
-func From(iter Iterator) *Observable {
+func From(iter common.Iterator) *Observable {
 	ret := newObservable("dummy", 0)
 	go func() {
 		for {

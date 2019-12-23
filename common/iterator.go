@@ -1,4 +1,4 @@
-package async
+package common
 
 // if have other object, need implement this interface
 type Iterator interface {

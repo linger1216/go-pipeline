@@ -1,11 +1,18 @@
 package pipe
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/linger1216/go-pipeline/common"
+)
 
 type ConcurrentPipeline struct {
 	debug   bool
-	Name    string
+	name    string
 	Filters []Filter
+}
+
+func (c *ConcurrentPipeline) Name() string {
+	return c.name
 }
 
 func (c *ConcurrentPipeline) Process(req Request) (Response, error) {
@@ -14,12 +21,12 @@ func (c *ConcurrentPipeline) Process(req Request) (Response, error) {
 	go func() {
 		for _, filter := range c.Filters {
 			if c.debug {
-				fmt.Printf("[%s-%s] process\n", c.Name, filter.Name())
+				fmt.Printf("[%s->%s] process\n", c.name, filter.Name())
 			}
 			resp, err = filter.Process(req)
-			if err != nil && err != ErrIgnore {
+			if err != nil && err != common.ErrIgnore {
 				if c.debug {
-					fmt.Printf("[%s-%s] process error:%s \n", c.Name, filter.Name(), err.Error())
+					fmt.Printf("[%s->%s] process error:%s \n", c.name, filter.Name(), err.Error())
 				}
 				panic(err)
 			}
@@ -40,14 +47,14 @@ func NewConcurrentPipeline(debug bool, name string, filters ...Filter) *Concurre
 }
 
 func (c *ConcurrentPipeline) Append(name string, fn Process) *ConcurrentPipeline {
-	_assert(fn != nil, `process func is nil`)
+	common.Assert(fn != nil, `process func is nil`)
 	dummyFilter := NewFilterAnonymous(name, fn)
 	c.AppendFilter(dummyFilter)
 	return c
 }
 
 func (c *ConcurrentPipeline) AppendFilter(f Filter) *ConcurrentPipeline {
-	_assert(f != nil, `filter is nil`)
+	common.Assert(f != nil, `filter is nil`)
 	c.Filters = append(c.Filters, f)
 	return c
 }

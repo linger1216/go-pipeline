@@ -1,11 +1,18 @@
 package pipe
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/linger1216/go-pipeline/common"
+)
 
 type StraightPipeline struct {
 	debug   bool
-	Name    string
+	name    string
 	Filters []Filter
+}
+
+func (s *StraightPipeline) Name() string {
+	return s.name
 }
 
 func (s *StraightPipeline) Process(req Request) (Response, error) {
@@ -13,12 +20,12 @@ func (s *StraightPipeline) Process(req Request) (Response, error) {
 	var err error
 	for _, filter := range s.Filters {
 		if s.debug {
-			fmt.Printf("[%s-%s] process\n", s.Name, filter.Name())
+			fmt.Printf("[%s->%s] process\n", s.name, filter.Name())
 		}
 		resp, err = filter.Process(req)
-		if err != nil && err != ErrIgnore {
+		if err != nil && err != common.ErrIgnore {
 			if s.debug {
-				fmt.Printf("[%s-%s] process error:%s \n", s.Name, filter.Name(), err.Error())
+				fmt.Printf("[%s-%s] process error:%s \n", s.name, filter.Name(), err.Error())
 			}
 			return nil, err
 		}
@@ -38,14 +45,14 @@ func NewStraightPipeline(debug bool, name string, filters ...Filter) *StraightPi
 }
 
 func (s *StraightPipeline) Append(name string, fn Process) *StraightPipeline {
-	_assert(fn != nil, `process func is nil`)
+	common.Assert(fn != nil, `process func is nil`)
 	dummyFilter := NewFilterAnonymous(name, fn)
 	s.AppendFilter(dummyFilter)
 	return s
 }
 
 func (s *StraightPipeline) AppendFilter(f Filter) *StraightPipeline {
-	_assert(f != nil, `filter is nil`)
+	common.Assert(f != nil, `filter is nil`)
 	s.Filters = append(s.Filters, f)
 	return s
 }

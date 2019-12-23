@@ -2,6 +2,7 @@ package async
 
 import (
 	"fmt"
+	"github.com/linger1216/go-pipeline/common"
 	"testing"
 	"time"
 )
@@ -156,7 +157,7 @@ func Test_Just(t *testing.T) {
 
 func Test_From(t *testing.T) {
 	srcInteger := make([]int, 0)
-	sub1 := From(NewIntegers([]int{1, 2, 3, 4, 5})).Subscribe(NewObserver("", OnNextFunction(func(req interface{}) {
+	sub1 := From(common.NewIntegers([]int{1, 2, 3, 4, 5})).Subscribe(NewObserver("", OnNextFunction(func(req interface{}) {
 		srcInteger = append(srcInteger, req.(int))
 	}), OnErrorFunction(func(err error) {
 		t.Errorf("err:%s", err.Error())
@@ -168,7 +169,7 @@ func Test_From(t *testing.T) {
 	sub1.Wait()
 
 	srcString := make([]string, 0)
-	sub2 := From(NewStrings([]string{"str1", "str2", "str3", "str4", "str5"})).Subscribe(NewObserver("", OnNextFunction(func(req interface{}) {
+	sub2 := From(common.NewStrings([]string{"str1", "str2", "str3", "str4", "str5"})).Subscribe(NewObserver("", OnNextFunction(func(req interface{}) {
 		srcString = append(srcString, req.(string))
 	}), OnErrorFunction(func(err error) {
 		t.Errorf("err:%s", err.Error())
