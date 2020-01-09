@@ -1,6 +1,7 @@
 package pipe
 
 import (
+	"context"
 	"fmt"
 	"github.com/linger1216/go-pipeline/common"
 )
@@ -15,7 +16,7 @@ func (c *ConcurrentPipeline) Name() string {
 	return c.name
 }
 
-func (c *ConcurrentPipeline) Process(req Request) (Response, error) {
+func (c *ConcurrentPipeline) Process(ctx context.Context, req Request) (Response, error) {
 	var resp interface{}
 	var err error
 	go func() {
@@ -23,7 +24,7 @@ func (c *ConcurrentPipeline) Process(req Request) (Response, error) {
 			if c.debug {
 				fmt.Printf("[%s->%s] process\n", c.name, filter.Name())
 			}
-			resp, err = filter.Process(req)
+			resp, err = filter.Process(ctx, req)
 			if err != nil && err != common.ErrIgnore {
 				if c.debug {
 					fmt.Printf("[%s->%s] process error:%s \n", c.name, filter.Name(), err.Error())

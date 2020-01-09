@@ -1,6 +1,9 @@
 package pipe
 
-import "github.com/linger1216/go-pipeline/common"
+import (
+	"context"
+	"github.com/linger1216/go-pipeline/common"
+)
 
 type Request interface{}
 type Requests []Request
@@ -26,12 +29,9 @@ func (i *ResponsesIterator) Next() (interface{}, error) {
 	return ret, nil
 }
 
-
-
-
-type Process func(request Request) (Response, error)
+type Process func(ctx context.Context, request Request) (Response, error)
 
 type Filter interface {
 	Name() string
-	Process(req Request) (Response, error)
+	Process(ctx context.Context, req Request) (Response, error)
 }

@@ -1,6 +1,7 @@
 package pipe
 
 import (
+	"context"
 	"fmt"
 	"github.com/linger1216/go-pipeline/common"
 	"sync"
@@ -16,7 +17,7 @@ func (p *ParallelPipeline) Name() string {
 	return p.name
 }
 
-func (p *ParallelPipeline) Process(req Request) (Response, error) {
+func (p *ParallelPipeline) Process(ctx context.Context, req Request) (Response, error) {
 	wg := sync.WaitGroup{}
 	ret := make(Responses, len(p.Filters))
 	for i := range p.Filters {
@@ -26,7 +27,7 @@ func (p *ParallelPipeline) Process(req Request) (Response, error) {
 			if p.debug {
 				fmt.Printf("[%s->%s] process\n", p.name, p.Filters[i].Name())
 			}
-			if resp, err := p.Filters[i].Process(req); err == nil {
+			if resp, err := p.Filters[i].Process(ctx, req); err == nil {
 				ret[i] = resp
 			} else {
 				if p.debug {

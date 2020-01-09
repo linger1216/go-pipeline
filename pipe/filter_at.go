@@ -1,6 +1,7 @@
 package pipe
 
 import (
+	"context"
 	"fmt"
 	"github.com/linger1216/go-pipeline/common"
 )
@@ -20,7 +21,7 @@ func (f *FilterAt) Name() string {
 	return ""
 }
 
-func (f *FilterAt) Process(req Request) (Response, error) {
+func (f *FilterAt) Process(ctx context.Context, req Request) (Response, error) {
 	requests, ok := req.(Responses)
 	if !ok {
 		return nil, common.ErrInvalidFormat

@@ -1,6 +1,9 @@
 package pipe
 
-import "github.com/linger1216/go-pipeline/common"
+import (
+	"context"
+	"github.com/linger1216/go-pipeline/common"
+)
 
 type FilterAnonymous struct {
 	name string
@@ -11,8 +14,8 @@ func (f *FilterAnonymous) Name() string {
 	return f.name
 }
 
-func (f *FilterAnonymous) Process(req Request) (Response, error) {
-	return f.fn(req)
+func (f *FilterAnonymous) Process(ctx context.Context, req Request) (Response, error) {
+	return f.fn(ctx, req)
 }
 
 func NewFilterAnonymous(name string, fn Process) *FilterAnonymous {

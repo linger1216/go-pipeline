@@ -1,6 +1,7 @@
 package pipe
 
 import (
+	"context"
 	"fmt"
 	"github.com/linger1216/go-pipeline/common"
 )
@@ -15,14 +16,14 @@ func (s *StraightPipeline) Name() string {
 	return s.name
 }
 
-func (s *StraightPipeline) Process(req Request) (Response, error) {
+func (s *StraightPipeline) Process(ctx context.Context, req Request) (Response, error) {
 	var resp interface{}
 	var err error
 	for _, filter := range s.Filters {
 		if s.debug {
 			fmt.Printf("[%s->%s] process\n", s.name, filter.Name())
 		}
-		resp, err = filter.Process(req)
+		resp, err = filter.Process(ctx, req)
 		if err != nil && err != common.ErrIgnore {
 			if s.debug {
 				fmt.Printf("[%s-%s] process error:%s \n", s.name, filter.Name(), err.Error())
