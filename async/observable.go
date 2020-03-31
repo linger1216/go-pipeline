@@ -25,39 +25,6 @@ func _closed(ch <-chan interface{}) bool {
 	return false
 }
 
-func Create(name string, source func(*Observer)) *Observable {
-	ret := newObservable(name, 0)
-	closeObservable := func() {
-		if !_closed(ret.ch) {
-			close(ret.ch)
-		}
-	}
-
-	nextFn := func(req interface{}) {
-		if !_closed(ret.ch) {
-			ret.ch <- req
-		}
-	}
-
-	errorFn := func(err error) {
-		if !_closed(ret.ch) {
-			ret.ch <- err
-		}
-		closeObservable()
-	}
-
-	completeFn := func() {
-		closeObservable()
-	}
-
-	emitter := NewObserver(name, OnNextFunction(nextFn), OnErrorFunction(errorFn), OnCompleteFunction(completeFn))
-
-	go func() {
-		source(emitter)
-	}()
-	return ret
-}
-
 func Empty() *Observable {
 	ret := newObservable("dummy", 0)
 	go func() {
@@ -153,59 +120,51 @@ func From(iter common.Iterator) *Observable {
 	return ret
 }
 
-// member functions
-func (o *Observable) Subscribe(ob *Observer) *Subscription {
-	interrupted := false
-	subscription := newSubscription()
-	exec := func() {
-	Loop:
-		for {
-			select {
-			case v, ok := <-o.ch:
-				if !ok {
-					// 1. 用户已经发完了 (Create 已经onComplete)
-					// 2. Observable 的channel 意外关闭 (不太可能, 属于异常)
-					// 这里不调用complete, 留待下面去调用
-					break Loop
-				}
-				switch item := v.(type) {
-				case error:
-					ob.OnError(item)
-					subscription.err = item
-					break Loop
-				default:
-					ob.OnNext(item)
-				}
-			case <-subscription.done:
-				interrupted = true
-				break Loop
-			}
-		}
-
-		if subscription.Error() == nil {
-			ob.OnComplete()
-		}
-
-		// 关闭subscription
-		// 如果是自然结束, 自动调用Unsubscribe, 用户端wait状态结束
-		// 如果是非自然结束, 用户手动调用Unsubscribe, 用户端wait状态结束
-		if !interrupted {
-			subscription.Unsubscribe()
+func Create(name string, source func(*Observer)) *Observable {
+	ret := newObservable(name, 0)
+	closeObservable := func() {
+		if !_closed(ret.ch) {
+			close(ret.ch)
 		}
 	}
 
-	go func() {
-		exec()
-	}()
+	nextFn := func(req interface{}) {
+		if !_closed(ret.ch) {
+			ret.ch <- req
+		}
+	}
 
-	return subscription
+	errorFn := func(err error) {
+		if !_closed(ret.ch) {
+			ret.ch <- err
+		}
+		closeObservable()
+	}
+
+	completeFn := func() {
+		closeObservable()
+	}
+
+	emitter := NewObserver(name, OnNextFunction(nextFn), OnErrorFunction(errorFn), OnCompleteFunction(completeFn))
+
+	go func() {
+		source(emitter)
+	}()
+	return ret
 }
 
 func (o *Observable) Map(fn MapFunction) *Observable {
 	ret := newObservable(o.name, 0)
 	go func() {
+	Loop:
 		for v := range o.ch {
-			ret.ch <- fn(v)
+			switch x := v.(type) {
+			case error:
+				ret.ch <- x
+				break Loop
+			default:
+				ret.ch <- fn(v)
+			}
 		}
 		close(ret.ch)
 	}()
@@ -358,7 +317,6 @@ func (o *Observable) Scan(fn ScanFunction) *Observable {
 	return ret
 }
 
-
 func (o *Observable) Concat(ob *Observable) *Observable {
 	ret := newObservable(o.name, 0)
 	go func() {
@@ -383,4 +341,52 @@ func (o *Observable) StartWith(item interface{}) *Observable {
 		close(ret.ch)
 	}()
 	return ret
+}
+
+// member functions
+func (o *Observable) Subscribe(ob *Observer) *Subscription {
+	interrupted := false
+	subscription := newSubscription()
+	exec := func() {
+	Loop:
+		for {
+			select {
+			case v, ok := <-o.ch:
+				if !ok {
+					// 1. 用户已经发完了 (Create 已经onComplete)
+					// 2. Observable 的channel 意外关闭 (不太可能, 属于异常)
+					// 这里不调用complete, 留待下面去调用
+					break Loop
+				}
+				switch item := v.(type) {
+				case error:
+					ob.OnError(item)
+					subscription.err = item
+					break Loop
+				default:
+					ob.OnNext(item)
+				}
+			case <-subscription.done:
+				interrupted = true
+				break Loop
+			}
+		}
+
+		if subscription.Error() == nil {
+			ob.OnComplete()
+		}
+
+		// 关闭subscription
+		// 如果是自然结束, 自动调用Unsubscribe, 用户端wait状态结束
+		// 如果是非自然结束, 用户手动调用Unsubscribe, 用户端wait状态结束
+		if !interrupted {
+			subscription.Unsubscribe()
+		}
+	}
+
+	go func() {
+		exec()
+	}()
+
+	return subscription
 }

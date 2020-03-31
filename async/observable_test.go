@@ -207,6 +207,7 @@ func Test_Subscribe(t *testing.T) {
 	sub.Wait()
 }
 
+// todo error
 func Test_Error(t *testing.T) {
 	src := make([]int, 0)
 	sub := Create("test error", func(observer *Observer) {
@@ -218,14 +219,17 @@ func Test_Error(t *testing.T) {
 			}
 		}
 		observer.OnComplete()
+	}).Map(func(i interface{}) interface{} {
+		return i.(int)
 	}).Subscribe(NewObserver("", OnNextFunction(func(req interface{}) {
 		src = append(src, req.(int))
+		t.Log(req)
 	}), OnErrorFunction(func(err error) {
-
-	}), OnCompleteFunction(func() {
 		if !sameInteger(src, []int{0, 1, 2, 3, 4}) {
 			t.Errorf("err result:%v\n", src)
 		}
+	}), OnCompleteFunction(func() {
+
 	})))
 	sub.Wait()
 }
@@ -449,7 +453,6 @@ func Test_Scan(t *testing.T) {
 	})))
 	sub.Wait()
 }
-
 
 func Test_Throw(t *testing.T) {
 	src := make([]int, 0)
