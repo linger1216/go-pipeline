@@ -19,9 +19,8 @@ func (c *ConcurrentPipeline) Name() string {
 }
 
 func (c *ConcurrentPipeline) Process(ctx context.Context, req Request) (Response, error) {
-	var resp []interface{}
+	resp := make([]interface{}, len(c.Filters))
 	var err error
-
 	wg := sync.WaitGroup{}
 	for i := range c.Filters {
 		wg.Add(1)
