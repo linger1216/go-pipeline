@@ -27,9 +27,9 @@ func (c *ConcurrentPipeline) Process(ctx context.Context, req Request) (Response
 		wg.Add(1)
 		go func(pos int) {
 			defer wg.Done()
-			resp[i], err = c.Filters[i].Process(ctx, req)
+			resp[pos], err = c.Filters[pos].Process(ctx, req)
 			if err != nil && err != common.ErrIgnore {
-				panic(fmt.Sprintf("[%s->%s] process error:%s \n", c.name, filter.Name(), err.Error()))
+				panic(fmt.Sprintf("[%s->%s] process error:%s \n", c.name, c.Filters[pos].Name(), err.Error()))
 			}
 		}(i)
 	}
