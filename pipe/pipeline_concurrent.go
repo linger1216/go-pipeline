@@ -3,6 +3,8 @@ package pipe
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/linger1216/go-pipeline/common"
 )
 
@@ -17,24 +19,34 @@ func (c *ConcurrentPipeline) Name() string {
 }
 
 func (c *ConcurrentPipeline) Process(ctx context.Context, req Request) (Response, error) {
-	var resp interface{}
+	resp := make([]interface{}, len(c.Filters))
 	var err error
-	go func() {
-		for _, filter := range c.Filters {
-			if c.debug {
-				fmt.Printf("[%s->%s] process\n", c.name, filter.Name())
-			}
-			resp, err = filter.Process(ctx, req)
+	wg := sync.WaitGroup{}
+	for i := range c.Filters {
+		wg.Add(1)
+		go func(pos int) {
+			defer wg.Done()
+			resp[pos], err = c.Filters[pos].Process(ctx, req)
 			if err != nil && err != common.ErrIgnore {
-				if c.debug {
-					fmt.Printf("[%s->%s] process error:%s \n", c.name, filter.Name(), err.Error())
-				}
-				panic(err)
+				panic(fmt.Sprintf("[%s->%s] process error:%s \n", c.name, c.Filters[pos].Name(), err.Error()))
 			}
-			req = resp
-		}
-	}()
-	return nil, nil
+		}(i)
+	}
+	wg.Wait()
+
+	// go func() {
+	// 	for _, filter := range c.Filters {
+	// 		if c.debug {
+	// 			fmt.Printf("[%s->%s] process\n", c.name, filter.Name())
+	// 		}
+	// 		resp, err = filter.Process(ctx, req)
+	// 		if err != nil && err != common.ErrIgnore {
+	// 			panic(fmt.Sprintf("[%s->%s] process error:%s \n", c.name, filter.Name(), err.Error()))
+	// 		}
+	// 		req = resp
+	// 	}
+	// }()
+	return resp, nil
 }
 
 func NewConcurrent(name string) *ConcurrentPipeline {
